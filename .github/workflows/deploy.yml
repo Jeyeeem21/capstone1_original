@@ -3,22 +3,41 @@ name: Deploy to Hostinger
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      HOSTINGER_SSH_HOST: 37.44.245.132
+      HOSTINGER_SSH_PORT: "65002"
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check SSH reachability
+        shell: bash
+        run: |
+          if timeout 20 bash -c "</dev/tcp/$HOSTINGER_SSH_HOST/$HOSTINGER_SSH_PORT"; then
+            echo "SSH endpoint is reachable."
+          else
+            echo "Hostinger SSH endpoint $HOSTINGER_SSH_HOST:$HOSTINGER_SSH_PORT is unreachable from this GitHub runner."
+            exit 1
+          fi
+
       - name: Deploy Laravel backend via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.SSH_HOST }}
+          host: ${{ env.HOSTINGER_SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          port: ${{ env.HOSTINGER_SSH_PORT }}
+          timeout: 120s
+          command_timeout: 30m
+          sync: true
+          script_stop: true
           script: |
             set -e
             cd /home/u940130461/capstone1
