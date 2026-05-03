@@ -18,14 +18,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        // Apply CORS globally so preflight and 404 responses also include CORS headers.
+        $middleware->append(HandleCors::class);
+
         // Register role middleware alias
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
-        ]);
-
-        // Add CORS middleware for API
-        $middleware->api(prepend: [
-            HandleCors::class,
         ]);
 
         $middleware->web(append: [
