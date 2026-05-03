@@ -53,6 +53,19 @@
     Header append Vary Accept-Encoding
 </IfModule>
 
+# ---------- CORS HEADERS ----------
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Origin "https://kjpricemill.com"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, X-XSRF-TOKEN, Accept"
+    Header always set Access-Control-Allow-Credentials "true"
+
+    # Handle OPTIONS preflight - return 200 immediately
+    RewriteEngine On
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^ - [R=200,L]
+</IfModule>
+
 # ---------- REWRITE RULES ----------
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
