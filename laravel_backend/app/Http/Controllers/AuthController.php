@@ -743,7 +743,7 @@ class AuthController extends Controller
     public function registerSendVerification(Request $request)
     {
         $validated = $request->validate([
-            'business_name'  => 'required|string|max:255',
+            'business_name'  => 'nullable|string|max:255',
             'contact_person' => 'required|string|max:255',
             'phone'          => [
                 'required',
@@ -779,7 +779,7 @@ class AuthController extends Controller
         $cacheKey = 'self_register_' . md5($email);
 
         Cache::put($cacheKey, [
-            'business_name'  => $validated['business_name'],
+            'business_name'  => isset($validated['business_name']) ? trim((string) $validated['business_name']) : null,
             'contact_person' => $validated['contact_person'],
             'phone'          => preg_replace('/\s+/', '', $validated['phone']),
             'email'          => $email,
@@ -900,8 +900,14 @@ class AuthController extends Controller
             ], 422);
         }
 
+        $businessName = trim((string) ($cached['business_name'] ?? ''));
+        $displayName = $businessName !== '' ? $businessName : trim((string) ($cached['contact_person'] ?? ''));
+        if ($displayName === '') {
+            $displayName = 'Customer';
+        }
+
         $customer = Customer::create([
-            'name'             => $cached['business_name'],
+            'name'             => $businessName !== '' ? $businessName : null,
             'contact'          => $cached['contact_person'],
             'phone'            => $cached['phone'],
             'email'            => $email,
@@ -916,7 +922,7 @@ class AuthController extends Controller
         $lastName  = count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 1)) : null;
 
         $user = User::create([
-            'name'       => $cached['business_name'],
+            'name'       => $displayName,
             'first_name' => $firstName,
             'last_name'  => $lastName,
             'email'      => $email,

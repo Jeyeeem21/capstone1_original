@@ -123,7 +123,6 @@ const Register = () => {
   // ── client-side validation for step 1 ─────────────────────────────────────
   const validateDetails = () => {
     const errs = {};
-    if (!form.business_name.trim())   errs.business_name   = ['Business name is required.'];
     if (!form.contact_person.trim())  errs.contact_person  = ['Contact person is required.'];
     if (!form.phone.trim())           errs.phone           = ['Phone number is required.'];
     else if (!PHONE_REGEX.test(form.phone.trim()))
@@ -634,7 +633,7 @@ const Register = () => {
               {/* Business Name */}
               <div>
                 <label className="flex items-center gap-1 text-sm font-semibold mb-1.5" style={{ color: theme.text_primary }}>
-                  <Building2 size={14} /> Business Name <span className="text-red-500">*</span>
+                  <Building2 size={14} /> Business Name (Optional)
                 </label>
                 <div className="relative">
                   <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

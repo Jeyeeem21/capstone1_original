@@ -157,7 +157,6 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
   const handleDetailSubmit = async (e) => {
     e.preventDefault();
     const errs = {};
-    if (!customerForm.name.trim()) errs.name = ['Business name is required.'];
     if (!customerForm.contact.trim()) errs.contact = ['Contact person is required.'];
     const phone = customerForm.phone.replace(/\s/g, '');
     if (!phone) errs.phone = ['Phone number is required.'];
@@ -379,7 +378,7 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
             )}
 
             <FormInput label="Business Name" name="name" value={customerForm.name}
-              onChange={handleDetailChange} required placeholder="Enter business name"
+              onChange={handleDetailChange} placeholder="Enter business name (optional)"
               submitted={submitted} error={detailErrors.name?.[0]} />
             <FormInput label="Contact Person" name="contact" value={customerForm.contact}
               onChange={handleDetailChange} required placeholder="Enter contact person name"
