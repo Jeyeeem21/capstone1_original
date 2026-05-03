@@ -246,7 +246,7 @@ const Deliveries = () => {
         setPayChangeResult(res.data?.change_amount ?? 0);
         // Optimistic: update payment status locally
         setDeliveries(prev => prev.map(d => {
-          if (d.id === delivery?.id || (payModal?.saleId && String(d.id) === `sale-${payModal.saleId}`)) {
+          if (payModal?.saleId && String(d.id) === `sale-${payModal.saleId}`) {
             return { ...d, payment_status: 'paid' };
           }
           return d;
