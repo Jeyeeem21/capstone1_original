@@ -1,0 +1,96 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                   FAILED DELIVERY & REAL-TIME UPDATES                        ║
+║                              IMPLEMENTATION SUMMARY                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PROBLEM 1: Failed Delivery Logic                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  ISSUE: When driver marks shipped order as "Failed", it should move to 
+         "Return Requested" status automatically.
+
+  SOLUTION:
+  ✓ Updated SaleService.php to allow 'shipped' → 'return_requested' transition
+  ✓ Added email notifications for failed deliveries (admin + customer)
+  ✓ Driver notes are saved with "(Failed)" prefix for tracking
+
+  FLOW:
+  Driver Portal → Mark as Failed → Backend changes to "return_requested"
+                                 → Sends notifications
+                                 → Appears in "Returns & Cancelled" tab
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PROBLEM 2: Real-time Updates                                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  ISSUE: Orders page doesn't refresh automatically when changes happen from
+         other portals (driver, customer, secretary).
+
+  SOLUTION:
+  ✓ Added 5-second polling to admin Orders page
+  ✓ Only polls when tab is visible and no modals are open
+  ✓ Driver Deliveries page already had polling (no changes needed)
+
+  FLOW:
+  Every 5 seconds → Check if tab visible + no modals → Fetch fresh data
+                                                      → Update UI automatically
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ FILES MODIFIED                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Backend:
+  ✓ laravel_backend/app/Services/SaleService.php
+    - Added 'return_requested' to valid transitions from 'shipped'
+
+  ✓ laravel_backend/app/Http/Controllers/DriverPortalController.php
+    - Added email notifications for failed deliveries
+
+  Frontend:
+  ✓ react_frontend/src/pages/admin/Orders/Orders.jsx
+    - Added real-time polling (5-second interval)
+    - Pauses polling when modals are open
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ TESTING CHECKLIST                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Failed Delivery:
+  □ Create order and mark as shipped
+  □ Driver marks as "Failed"
+  □ Verify status changes to "Return Requested"
+  □ Check admin receives notification
+  □ Check customer receives email
+  □ Verify order appears in "Returns & Cancelled" tab
+
+  Real-time Updates:
+  □ Open orders page in 2 windows (admin + driver)
+  □ Driver marks order as delivered
+  □ Admin page updates within 5 seconds (no manual refresh)
+  □ Test with different status changes
+  □ Verify polling pauses when modal is open
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ BENEFITS                                                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  ✓ Automatic status management for failed deliveries
+  ✓ Better communication (email notifications)
+  ✓ Real-time visibility across all portals
+  ✓ Improved workflow (no manual refresh needed)
+  ✓ Better user experience
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ NOTES                                                                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  • Polling interval: 5 seconds (configurable)
+  • Polling pauses when modals are open (prevents data loss)
+  • Polling pauses when tab is in background (saves resources)
+  • Driver portal already had polling (no changes needed)
+  • All diagnostics passed ✓
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              IMPLEMENTATION COMPLETE                          ║
+╚══════════════════════════════════════════════════════════════════════════════╝

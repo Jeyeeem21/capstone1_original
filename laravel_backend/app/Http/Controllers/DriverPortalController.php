@@ -562,6 +562,26 @@ class DriverPortalController extends Controller
                 ['sale_id' => $sale->id, 'transaction_id' => $sale->transaction_id]
             );
 
+            // Send email notifications after response
+            $emailService = $this->emailService;
+            $saleSnapshot = $sale;
+            dispatch(function () use ($emailService, $saleSnapshot, $driverName) {
+                try {
+                    $emailService->sendOrderStatusToAdmin(
+                        $saleSnapshot,
+                        'Delivery Failed - Return Requested',
+                        "Order #{$saleSnapshot->transaction_id} delivery failed by {$driverName}. The order has been automatically moved to Return Requested status."
+                    );
+                    $emailService->sendOrderStatusToCustomer(
+                        $saleSnapshot,
+                        'Delivery Issue - Return Requested',
+                        "We're sorry, but your order #{$saleSnapshot->transaction_id} could not be delivered. We've automatically initiated a return request. Our team will contact you shortly."
+                    );
+                } catch (\Throwable $e) {
+                    \Log::warning("Failed delivery email failed for sale #{$saleSnapshot->id}: " . $e->getMessage());
+                }
+            })->afterResponse();
+
         } elseif ($action === 'picked_up') {
             // Notify admins that driver has picked up the return — awaiting admin verification
             $this->notificationService->notifyAdmins(

@@ -311,6 +311,20 @@ const AdminOrders = () => {
     initialData: [],
   });
 
+  // Real-time polling — refresh every 5s when tab is visible and no modal open
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible' && 
+          !isViewModalOpen && !isCancelModalOpen && !isReturnModalOpen && 
+          !isAcceptReturnModalOpen && !isMarkReturnModalOpen && !isPayModalOpen && 
+          !isShipModalOpen && !isDeliverModalOpen && !isVoidModalOpen && !isRestockModalOpen) {
+        refetch();
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [refetch, isViewModalOpen, isCancelModalOpen, isReturnModalOpen, isAcceptReturnModalOpen, 
+      isMarkReturnModalOpen, isPayModalOpen, isShipModalOpen, isDeliverModalOpen, isVoidModalOpen, isRestockModalOpen]);
+
   // Map API data to order format
   const mappedOrders = useMemo(() =>
     (orders || [])

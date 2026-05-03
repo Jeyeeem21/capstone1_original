@@ -74,8 +74,8 @@ const ProfileSectionComponent = ({ profileInfo, handleProfileChange, handleSaveP
       </div>
       <FormInput label="Phone Number" name="phone" value={profileInfo.phone || ''} onChange={handleProfileChange} placeholder="+63 XXX XXX XXXX" />
     </div>
-    <FormInput label="Role" name="role" value={profileInfo.role || ''} disabled hint="Contact administrator to change your role" />
-    
+    <FormInput label="Role" name="role" value={profileInfo.role || ''} disabled  />
+    {/* hint="Contact administrator to change your role" */}
     <div className="flex justify-end pt-4 border-t border-primary-200 dark:border-primary-700">
       <Button onClick={handleSaveProfile} disabled={!!emailError || isCheckingEmail}>
         <Save size={16} className="mr-1.5" />

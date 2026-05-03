@@ -1,0 +1,169 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                        FAILED DELIVERY FLOW DIAGRAM                          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SCENARIO: Driver attempts delivery but customer is not available            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────┐
+    │ Order Status │
+    │   SHIPPED    │
+    └──────┬───────┘
+           │
+           │ Driver arrives at location
+           │ Customer not available
+           │
+           ▼
+    ┌──────────────────────┐
+    │  Driver Portal       │
+    │  Marks as "Failed"   │
+    │  + Driver Notes      │
+    └──────┬───────────────┘
+           │
+           │ POST /driver-portal/orders/{id}/status
+           │ { status: "failed", driver_notes: "..." }
+           │
+           ▼
+    ┌──────────────────────────────────────────────────────────────┐
+    │  Backend: DriverPortalController.php                         │
+    │  ─────────────────────────────────────────────────────────   │
+    │  1. Validate request                                         │
+    │  2. Change status: shipped → return_requested                │
+    │  3. Save driver notes with "(Failed)" prefix                 │
+    │  4. Send in-app notifications to admins                      │
+    │  5. Queue email notifications (admin + customer)             │
+    │  6. Log audit trail                                          │
+    └──────┬───────────────────────────────────────────────────────┘
+           │
+           ├─────────────────────────────────────────────────────┐
+           │                                                     │
+           ▼                                                     ▼
+    ┌──────────────────┐                              ┌──────────────────┐
+    │  Admin Portal    │                              │  Customer Portal │
+    │  ──────────────  │                              │  ───────────────  │
+    │  • Notification  │                              │  • Email         │
+    │  • Email         │                              │  • Status update │
+    │  • Status update │                              │  in orders page  │
+    └──────┬───────────┘                              └──────────────────┘
+           │
+           │ Real-time polling (5s)
+           │ Auto-refreshes order list
+           │
+           ▼
+    ┌──────────────────────────────────────────────────────────────┐
+    │  Orders Page - "Returns & Cancelled" Tab                     │
+    │  ──────────────────────────────────────────────────────────  │
+    │  Order appears with status: "Return Requested"               │
+    │  Driver notes visible: "Driver (Failed): [notes]"            │
+    └──────┬───────────────────────────────────────────────────────┘
+           │
+           │ Admin reviews and takes action
+           │
+           ▼
+    ┌──────────────────────────────────────────────────────────────┐
+    │  Admin Actions Available:                                    │
+    │  ──────────────────────────────────────────────────────────  │
+    │  1. Accept Return → Assign pickup driver                     │
+    │  2. Reject Return → Revert to "Delivered"                    │
+    │  3. Contact customer to reschedule                           │
+    └──────────────────────────────────────────────────────────────┘
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                      REAL-TIME UPDATE FLOW DIAGRAM                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SCENARIO: Multiple users viewing orders simultaneously                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────┐         ┌──────────────┐         ┌──────────────┐
+    │ Admin Portal │         │ Driver Portal│         │Secretary Port│
+    │ (Browser 1)  │         │ (Browser 2)  │         │ (Browser 3)  │
+    └──────┬───────┘         └──────┬───────┘         └──────┬───────┘
+           │                        │                        │
+           │ Viewing orders         │ Viewing deliveries     │ Viewing orders
+           │ page                   │ page                   │ page
+           │                        │                        │
+           ├────────────────────────┼────────────────────────┤
+           │                        │                        │
+           │ Every 5 seconds:       │ Every 5 seconds:       │ Every 5 seconds:
+           │ ┌────────────────┐     │ ┌────────────────┐     │ ┌────────────────┐
+           │ │ Check:         │     │ │ Check:         │     │ │ Check:         │
+           │ │ • Tab visible? │     │ │ • Tab visible? │     │ │ • Tab visible? │
+           │ │ • No modals?   │     │ │ • No modals?   │     │ │ • No modals?   │
+           │ └────────┬───────┘     │ └────────┬───────┘     │ └────────┬───────┘
+           │          │              │          │              │          │
+           │          ▼              │          ▼              │          ▼
+           │ GET /sales              │ GET /driver-portal/    │ GET /sales
+           │                         │     my-deliveries      │
+           │          │              │          │              │          │
+           │          ▼              │          ▼              │          ▼
+           │ ┌────────────────┐     │ ┌────────────────┐     │ ┌────────────────┐
+           │ │ Update UI      │     │ │ Update UI      │     │ │ Update UI      │
+           │ │ if data changed│     │ │ if data changed│     │ │ if data changed│
+           │ └────────────────┘     │ └────────────────┘     │ └────────────────┘
+           │                        │                        │
+           │                        │ Driver marks order     │
+           │                        │ as delivered           │
+           │                        │         │              │
+           │                        │         ▼              │
+           │                        │ POST /driver-portal/   │
+           │                        │ orders/{id}/status     │
+           │                        │         │              │
+           │                        │         ▼              │
+           │                        │ Status updated in DB   │
+           │                        │         │              │
+           │◄───────────────────────┴─────────┴──────────────┘
+           │                                                  
+           │ Next poll (within 5s)                           
+           │         │                                        
+           │         ▼                                        
+           │ ┌────────────────────────────────────┐          
+           │ │ Admin sees "Delivered" status      │          
+           │ │ WITHOUT manual refresh!            │          
+           │ └────────────────────────────────────┘          
+           │                                                  
+           ▼                                                  
+    Status badge updates                                     
+    from "Shipped" to "Delivered"                            
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           KEY IMPROVEMENTS                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  BEFORE:
+  ❌ Failed deliveries had no automatic status change
+  ❌ Users had to manually refresh to see updates
+  ❌ Confusion about order status across portals
+  ❌ Delayed response to delivery failures
+
+  AFTER:
+  ✅ Failed deliveries automatically move to "Return Requested"
+  ✅ All portals update automatically every 5 seconds
+  ✅ Real-time visibility across all users
+  ✅ Immediate notifications for delivery failures
+  ✅ Better workflow and user experience
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              STATUS TRANSITIONS                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  Pending ──────────────────────────────────────────────────────┐
+     │                                                           │
+     ├─→ Processing ──────────────────────────────────────┐     │
+     │       │                                             │     │
+     │       ├─→ Shipped ──────────────────────────┐      │     │
+     │       │      │                               │      │     │
+     │       │      ├─→ Delivered ─→ Return Req.   │      │     │
+     │       │      │                               │      │     │
+     │       │      └─→ Return Requested ◄──────────┘      │     │
+     │       │          (NEW: Failed delivery)             │     │
+     │       │                                             │     │
+     │       └─→ Completed                                 │     │
+     │                                                     │     │
+     └─────────────────────────────────────────────────────┴─────┴─→ Cancelled
+
+  Return Requested ─→ Picking Up ─→ Picked Up ─→ Returned

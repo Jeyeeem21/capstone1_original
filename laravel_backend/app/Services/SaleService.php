@@ -193,7 +193,7 @@ class SaleService
             $validTransitions = [
                 'pending' => ['processing', 'cancelled'],
                 'processing' => ['shipped', 'completed', 'cancelled'],
-                'shipped' => ['delivered', 'cancelled'],
+                'shipped' => ['delivered', 'cancelled', 'return_requested'], // Allow failed deliveries to go to return_requested
                 'delivered' => ['return_requested'],
                 'picking_up' => ['picked_up'],
                 'picked_up' => ['returned'],
