@@ -186,7 +186,7 @@ class SaleController extends Controller
             ]);
 
             // Notify admins + customer of new order (in-app)
-            $customerName = $sale->customer?->name ?? 'Walk-in';
+            $customerName = $sale->customer?->display_name ?? 'Walk-in';
             $this->sendOrderNotification(
                 $sale,
                 'new_order',
@@ -377,7 +377,7 @@ class SaleController extends Controller
             ]);
 
             // Notify admins of return request
-            $customerName = $sale->customer?->name ?? 'Customer';
+            $customerName = $sale->customer?->display_name ?? 'Customer';
             $this->sendOrderNotification(
                 $sale,
                 'return_requested',

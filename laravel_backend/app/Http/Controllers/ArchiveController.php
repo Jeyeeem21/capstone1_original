@@ -194,7 +194,7 @@ class ArchiveController extends Controller
                     $recordData['batch_number'] = $record->batch?->batch_number ?? null;
                 } elseif ($key === 'deliveries') {
                     $recordData['driver_name'] = $record->driver?->name ?? '—';
-                    $recordData['customer_name'] = $record->customer?->name ?? '—';
+                    $recordData['customer_name'] = $record->customer?->display_name ?? '—';
                     $recordData['items_count'] = $record->items?->count() ?? 0;
                 } elseif ($key === 'users') {
                     $recordData['role_label'] = ucwords(str_replace('_', ' ', $record->role ?? ''));

@@ -70,6 +70,12 @@ const Customer = () => {
     initialData: [],
   });
 
+  const getCustomerDisplayName = useCallback((item) => {
+    return item?.display_name || item?.name || item?.contact || item?.email || 'Customer';
+  }, []);
+
+  const selectedDisplayName = useMemo(() => getCustomerDisplayName(selectedItem), [getCustomerDisplayName, selectedItem]);
+
   const statusOptions = useMemo(() => [
     { value: 'Active', label: 'Active' },
     { value: 'Inactive', label: 'Inactive' },
@@ -263,7 +269,7 @@ const Customer = () => {
     try {
       const response = await apiClient.post(`/customers/${selectedItem.id}/create-account`, accountFormData);
       if (response.success) {
-        toast.success('Account Created', `Account has been created for ${selectedItem.name}`);
+        toast.success('Account Created', `Account has been created for ${selectedDisplayName}`);
         setIsAccountModalOpen(false);
         invalidateCache(CACHE_KEY);
         refetch();
@@ -450,7 +456,7 @@ const Customer = () => {
       const response = await apiClient.delete(`/customers/${selectedItem.id}`);
       
       if (response.success) {
-        const customerName = selectedItem.name;
+        const customerName = selectedDisplayName;
         const archivedId = selectedItem.id;
         // Close modal first
         setIsDeleteModalOpen(false);
@@ -555,7 +561,7 @@ const Customer = () => {
       if (response._requires_reverification) {
         setManageCreatedAccount({
           id: selectedItem.user_id,
-          name: selectedItem.name,
+          name: selectedDisplayName,
           email: manageFormData.email || selectedItem.email,
         });
         setManageAccountStep('verification');
@@ -646,7 +652,7 @@ const Customer = () => {
   const totalOrders = customers.reduce((sum, c) => sum + c.orders, 0);
 
   const columns = useMemo(() => [
-    { header: 'Business Name', accessor: 'name' },
+    { header: 'Business Name', accessor: 'display_name' },
     { header: 'Contact Person', accessor: 'contact' },
     { 
       header: 'Email & Phone', 
@@ -819,7 +825,7 @@ const Customer = () => {
                     <Building2 size={20} />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">{selectedItem.name}</h3>
+                    <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">{selectedDisplayName}</h3>
                     <p className="text-xs text-gray-600 dark:text-gray-300">Business Name</p>
                   </div>
                   <StatusBadge status={selectedItem.status} />
@@ -1290,7 +1296,7 @@ const Customer = () => {
                     Verify Email Address
                   </h3>
                   <p className="text-gray-600 dark:text-gray-300">
-                    Send a verification code to confirm <strong>{selectedItem.name}</strong>'s email
+                    Send a verification code to confirm <strong>{selectedDisplayName}</strong>'s email
                   </p>
                 </div>
 
@@ -1302,7 +1308,7 @@ const Customer = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-blue-700 dark:text-blue-400">Business:</span>
-                      <span className="font-semibold text-blue-800 dark:text-blue-200">{selectedItem.name}</span>
+                      <span className="font-semibold text-blue-800 dark:text-blue-200">{selectedDisplayName}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-blue-700 dark:text-blue-400">Contact:</span>
@@ -1356,7 +1362,7 @@ const Customer = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-blue-700 dark:text-blue-400">Business:</span>
-                      <span className="font-semibold text-blue-800 dark:text-blue-200">{selectedItem.name}</span>
+                      <span className="font-semibold text-blue-800 dark:text-blue-200">{selectedDisplayName}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-blue-700 dark:text-blue-400">Contact:</span>
@@ -1431,7 +1437,7 @@ const Customer = () => {
                     <div>
                       <h4 className="font-semibold text-green-800 dark:text-green-300 mb-1">Next Steps</h4>
                       <ol className="text-xs text-green-700 dark:text-green-400 space-y-1 list-decimal list-inside">
-                        <li>Ask {selectedItem.name} to check their email</li>
+                        <li>Ask {selectedDisplayName} to check their email</li>
                         <li>Enter the 6-digit code above to verify</li>
                         <li>Once verified, set the account password</li>
                       </ol>
@@ -1468,7 +1474,7 @@ const Customer = () => {
                     Set Account Password
                   </h3>
                   <p className="text-gray-600 dark:text-gray-300">
-                    Create login credentials for <strong>{selectedItem.name}</strong>
+                    Create login credentials for <strong>{selectedDisplayName}</strong>
                   </p>
                 </div>
 
@@ -1480,7 +1486,7 @@ const Customer = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-blue-700 dark:text-blue-400">Business:</span>
-                      <span className="font-semibold text-blue-800 dark:text-blue-200">{selectedItem.name}</span>
+                      <span className="font-semibold text-blue-800 dark:text-blue-200">{selectedDisplayName}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-blue-700 dark:text-blue-400">Contact:</span>
@@ -1593,7 +1599,7 @@ const Customer = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-blue-700 dark:text-blue-400">Name:</span>
-                  <span className="font-semibold text-blue-800 dark:text-blue-200">{selectedItem.name}</span>
+                  <span className="font-semibold text-blue-800 dark:text-blue-200">{selectedDisplayName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-blue-700 dark:text-blue-400">Contact:</span>

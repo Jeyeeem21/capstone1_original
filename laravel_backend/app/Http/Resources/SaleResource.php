@@ -101,7 +101,7 @@ class SaleResource extends JsonResource
             'id' => $this->id,
             'transaction_id' => $this->transaction_id,
             'customer_id' => $this->customer_id,
-            'customer_name' => $this->customer?->name ?? 'Walk-in',
+            'customer_name' => $this->customer?->display_name ?? 'Walk-in',
             'subtotal' => (float) $this->subtotal,
             'discount' => (float) $this->discount,
             'delivery_fee' => (float) ($this->delivery_fee ?? 0),

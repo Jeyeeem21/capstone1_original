@@ -928,7 +928,7 @@ class DashboardService
      */
     private function getRecentSales(?Carbon $start = null, ?Carbon $end = null): array
     {
-        $query = Sale::with(['customer:id,name', 'items']);
+        $query = Sale::with(['customer:id,name,contact,email', 'items']);
         if ($start && $end) {
             $query->whereBetween('created_at', [$start, $end]);
         }
@@ -939,7 +939,7 @@ class DashboardService
                 return [
                     'id' => $sale->id,
                     'transaction_id' => $sale->transaction_id,
-                    'customer' => $sale->customer?->name ?? 'Walk-in',
+                    'customer' => $sale->customer?->display_name ?? 'Walk-in',
                     'total' => round((float) $sale->total, 2),
                     'items_count' => $sale->items->count(),
                     'payment_method' => $sale->payment_method === 'gcash' ? 'GCash'

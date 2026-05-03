@@ -143,7 +143,7 @@ class ReportController extends Controller
             // â”€â”€ Supporting detail lists â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
             // Individual completed sales
-            $salesList = Sale::with(['customer:id,name'])
+            $salesList = Sale::with(['customer:id,name,contact,email'])
                 ->whereIn('status', self::COMPLETED)
                 ->whereBetween('created_at', [$from, $to])
                 ->orderBy('created_at', 'desc')
@@ -151,7 +151,7 @@ class ReportController extends Controller
                 ->map(fn($s) => [
                     'date'           => $s->created_at->toDateString(),
                     'transaction_id' => $s->transaction_id,
-                    'customer'       => $s->customer?->name ?? 'Walk-in',
+                    'customer'       => $s->customer?->display_name ?? 'Walk-in',
                     'gross_sales'    => (float) $s->subtotal,
                     'discount'       => (float) $s->discount,
                     'delivery_fee'   => (float) $s->delivery_fee,

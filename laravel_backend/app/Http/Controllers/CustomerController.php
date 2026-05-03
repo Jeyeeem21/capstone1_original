@@ -32,6 +32,11 @@ class CustomerController extends Controller
         $this->emailService = $emailService;
     }
 
+    private function customerDisplayName(Customer $customer): string
+    {
+        return $customer->display_name;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -88,9 +93,9 @@ class CustomerController extends Controller
 
         $customer = $this->customerService->createCustomer($validated);
 
-        $this->logAudit('CREATE', 'Customer', "Created customer: {$customer->name}", [
+        $this->logAudit('CREATE', 'Customer', "Created customer: {$this->customerDisplayName($customer)}", [
             'customer_id' => $customer->id,
-            'name' => $customer->name,
+            'name' => $this->customerDisplayName($customer),
         ]);
 
         return $this->successResponse(
@@ -190,7 +195,7 @@ class CustomerController extends Controller
         // Sync linked User account if it exists
         $linkedUser = User::where('email', $oldEmail)->where('role', 'customer')->first();
         if ($linkedUser) {
-            $userUpdates = ['email' => $customer->email, 'name' => $customer->name, 'phone' => $customer->phone];
+            $userUpdates = ['email' => $customer->email, 'name' => $this->customerDisplayName($customer), 'phone' => $customer->phone];
             if ($customer->contact) {
                 $parts = explode(' ', $customer->contact, 2);
                 $userUpdates['first_name'] = $parts[0];
@@ -199,7 +204,7 @@ class CustomerController extends Controller
             $linkedUser->update($userUpdates);
         }
 
-        $this->logAudit('UPDATE', 'Customer', "Updated customer: {$customer->name}", [
+        $this->logAudit('UPDATE', 'Customer', "Updated customer: {$this->customerDisplayName($customer)}", [
             'customer_id' => $customer->id,
             'changes' => $changes,
         ]);
@@ -226,9 +231,9 @@ class CustomerController extends Controller
         // Now soft delete (sets deleted_at)
         $this->customerService->deleteCustomer($customer);
 
-        $this->logAudit('ARCHIVE', 'Customer', "Archived customer: {$customer->name}", [
+        $this->logAudit('ARCHIVE', 'Customer', "Archived customer: {$this->customerDisplayName($customer)}", [
             'customer_id' => $customer->id,
-            'name' => $customer->name,
+            'name' => $this->customerDisplayName($customer),
             'email' => $customer->email,
             'status_changed' => 'Active → Inactive',
         ]);
@@ -407,8 +412,10 @@ class CustomerController extends Controller
             'password.confirmed' => 'Password confirmation does not match.',
         ]);
 
+        $displayName = $this->customerDisplayName($customer);
+
         $user = User::create([
-            'name' => $customer->name,
+            'name' => $displayName,
             'first_name' => $customer->contact ? explode(' ', $customer->contact)[0] : null,
             'last_name' => $customer->contact ? (count(explode(' ', $customer->contact)) > 1 ? implode(' ', array_slice(explode(' ', $customer->contact), 1)) : null) : null,
             'email' => $customer->email,
@@ -419,7 +426,7 @@ class CustomerController extends Controller
             'email_verified_at' => now(),
         ]);
 
-        $this->logAudit('CREATE_ACCOUNT', 'Customer', "Created customer account for {$customer->name} ({$customer->email})", [
+        $this->logAudit('CREATE_ACCOUNT', 'Customer', "Created customer account for {$displayName} ({$customer->email})", [
             'customer_id' => $customer->id,
             'user_id' => $user->id,
             'email' => $customer->email,
@@ -448,21 +455,22 @@ class CustomerController extends Controller
     {
         $customer = Customer::find($id);
         if (!$customer) return response()->json(['success' => true]);
+        $displayName = $this->customerDisplayName($customer);
 
         $emailService = $this->emailService;
-        dispatch(function () use ($emailService, $customer) {
+        dispatch(function () use ($emailService, $customer, $displayName) {
             try {
                 $emailService->sendAdminAlert(
-                    "New Customer Added: {$customer->name}",
+                    "New Customer Added: {$displayName}",
                     'New Customer Added',
-                    "A new customer \"{$customer->name}\" ({$customer->email}) has been added to the system."
+                    "A new customer \"{$displayName}\" ({$customer->email}) has been added to the system."
                 );
 
                 $emailService->sendAlertTo(
                     $customer->email,
                     'Welcome! You Have Been Added as a Customer',
                     'Welcome to Our System',
-                    "Hi {$customer->name},\n\nYou have been added as a customer in our system.\n\nContact: {$customer->contact}\nEmail: {$customer->email}\nPhone: {$customer->phone}\n\nIf you have any questions, please don't hesitate to contact us."
+                    "Hi {$displayName},\n\nYou have been added as a customer in our system.\n\nContact: {$customer->contact}\nEmail: {$customer->email}\nPhone: {$customer->phone}\n\nIf you have any questions, please don't hesitate to contact us."
                 );
             } catch (\Throwable $e) { /* silent */ }
         })->afterResponse();
@@ -477,6 +485,7 @@ class CustomerController extends Controller
     {
         $customer = Customer::find($id);
         if (!$customer) return response()->json(['success' => true]);
+        $displayName = $this->customerDisplayName($customer);
 
         $changes = $request->input('changes', []);
         if (empty($changes)) return response()->json(['success' => true]);
@@ -484,19 +493,19 @@ class CustomerController extends Controller
         $changesSummary = "Changes made:\n" . implode("\n", $changes);
         $emailService = $this->emailService;
 
-        dispatch(function () use ($emailService, $customer, $changesSummary) {
+        dispatch(function () use ($emailService, $customer, $changesSummary, $displayName) {
             try {
                 $emailService->sendAdminAlert(
-                    "Customer Updated: {$customer->name}",
+                    "Customer Updated: {$displayName}",
                     'Customer Information Updated',
-                    "The customer \"{$customer->name}\" ({$customer->email}) has been updated in the system.\n\n{$changesSummary}"
+                    "The customer \"{$displayName}\" ({$customer->email}) has been updated in the system.\n\n{$changesSummary}"
                 );
 
                 $emailService->sendAlertTo(
                     $customer->email,
                     'Your Information Has Been Updated',
                     'Your Account Information Was Updated',
-                    "Hi {$customer->name},\n\nYour information has been updated by the administrator.\n\n{$changesSummary}\n\nIf you did not expect these changes, please contact us immediately."
+                    "Hi {$displayName},\n\nYour information has been updated by the administrator.\n\n{$changesSummary}\n\nIf you did not expect these changes, please contact us immediately."
                 );
             } catch (\Throwable $e) { /* silent */ }
         })->afterResponse();

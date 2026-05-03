@@ -458,7 +458,7 @@ class ProductController extends Controller
                 return [
                     'sale_id' => $sale->id,
                     'transaction_id' => $sale->transaction_id,
-                    'customer_name' => $sale->customer?->name ?? 'Walk-in',
+                    'customer_name' => $sale->customer?->display_name ?? 'Walk-in',
                     'quantity' => (int) $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                     'subtotal' => (float) $item->subtotal,

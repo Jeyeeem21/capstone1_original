@@ -37,9 +37,9 @@ const Partners = () => {
     const formattedCustomers = customers.map(c => ({
       id: `customer-${c.id}`,
       originalId: c.id,
-      name: c.name,
+      name: c.display_name || c.name || c.contact || c.email || `Customer #${c.id}`,
       type: 'Customer',
-      contact: c.contact || c.name,
+      contact: c.contact || c.display_name || c.name || c.email,
       phone: c.phone,
       status: c.status,
       route: `${basePath}/partners/customer`

@@ -60,14 +60,14 @@ class DriverPortalController extends Controller
 
         if ($driver) {
             $driverId = $driver->id;
-            $deliveryAssignments = DeliveryAssignment::with(['customer:id,name', 'items'])
+            $deliveryAssignments = DeliveryAssignment::with(['customer:id,name,contact,email', 'items'])
                 ->where('driver_id', $driver->id)
                 ->orderBy('delivery_date', 'desc')
                 ->get();
         }
 
         // Also get sales assigned to this driver (by name/plate text match)
-        $salesQuery = Sale::with(['customer:id,name,address,phone', 'items'])
+        $salesQuery = Sale::with(['customer:id,name,contact,email,address,phone', 'items'])
             ->where(function ($q) use ($user) {
                 $q->where('driver_name', $user->name);
                 if ($user->truck_plate_number) {
@@ -160,7 +160,7 @@ class DriverPortalController extends Controller
                 'destination' => $d->destination,
                 'status' => $d->status,
                 'priority' => $d->priority,
-                'customer' => $d->customer?->name ?? $d->contact_person ?? 'N/A',
+                'customer' => $d->customer?->display_name ?? $d->contact_person ?? 'N/A',
                 'items_count' => $d->items->count(),
                 'total' => $d->items->sum('total'),
                 'time' => $d->delivery_date?->format('M d, Y'),
@@ -180,11 +180,11 @@ class DriverPortalController extends Controller
                 'destination' => $s->delivery_address ?: ($s->customer?->address ?? 'N/A'),
                 'status' => $this->mapSaleStatusToDelivery($s->status),
                 'priority' => 'Normal',
-                'customer' => $s->customer?->name ?? 'Walk-in',
+                'customer' => $s->customer?->display_name ?? 'Walk-in',
                 'items_count' => $s->items->count(),
                 'total' => (float) $s->total,
                 'time' => $s->created_at->format('M d, Y'),
-                'contact_person' => $s->customer?->name ?? 'N/A',
+                'contact_person' => $s->customer?->display_name ?? 'N/A',
                 'contact_phone' => $s->customer?->phone ?? 'N/A',
             ];
         })->values();
@@ -218,7 +218,7 @@ class DriverPortalController extends Controller
 
         // 1. Delivery Assignments
         if ($driver) {
-            $assignments = DeliveryAssignment::with(['customer:id,name', 'items'])
+            $assignments = DeliveryAssignment::with(['customer:id,name,contact,email', 'items'])
                 ->where('driver_id', $driver->id)
                 ->orderBy('delivery_date', 'desc')
                 ->get();
@@ -238,7 +238,7 @@ class DriverPortalController extends Controller
                     'proof_of_delivery' => $a->proof_of_delivery,
                     'picked_up_at' => $a->picked_up_at?->toDateTimeString(),
                     'delivered_at' => $a->delivered_at?->toDateTimeString(),
-                    'customer' => $a->customer?->name ?? $a->contact_person ?? 'N/A',
+                    'customer' => $a->customer?->display_name ?? $a->contact_person ?? 'N/A',
                     'items' => $a->items->map(fn($i) => [
                         'product_name' => $i->product_name,
                         'quantity' => $i->quantity,
@@ -253,7 +253,7 @@ class DriverPortalController extends Controller
         }
 
         // 2. Sales assigned to this driver (delivery OR return pickup)
-        $sales = Sale::with(['customer:id,name,address,phone', 'items.product.variety'])
+                $sales = Sale::with(['customer:id,name,contact,email,address,phone', 'items.product.variety'])
             ->where(function ($q) use ($user) {
                 $q->where('driver_name', $user->name)
                   ->orWhere('return_pickup_driver', $user->name);
@@ -277,7 +277,7 @@ class DriverPortalController extends Controller
                 'is_return_pickup' => $isReturnPickup,
                 'delivery_number' => $s->transaction_id,
                 'destination' => $s->delivery_address ?: ($s->customer?->address ?? 'N/A'),
-                'contact_person' => $s->customer?->name ?? 'Walk-in',
+                'contact_person' => $s->customer?->display_name ?? 'Walk-in',
                 'contact_phone' => $s->customer?->phone ?? 'N/A',
                 'delivery_date' => $isReturnPickup
                     ? ($s->return_pickup_date ?? $s->updated_at?->toDateString())
@@ -290,7 +290,7 @@ class DriverPortalController extends Controller
                 'picked_up_at' => null,
                 'delivered_at' => $s->status === 'delivered' || $s->status === 'completed' || $s->status === 'returned' || $s->status === 'picked_up'
                     ? $s->updated_at?->toDateTimeString() : null,
-                'customer' => $s->customer?->name ?? 'Walk-in',
+                'customer' => $s->customer?->display_name ?? 'Walk-in',
                 'items' => $s->items->map(fn($i) => [
                     'product_name' => $i->product?->product_name ?? 'Product',
                     'variety' => $i->product?->variety?->name ?? null,

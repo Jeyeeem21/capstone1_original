@@ -99,6 +99,14 @@ const posPaymentMethods = [
   { value: 'pay_later', label: 'Pay Later', icon: Clock, color: '#8b5cf6' },
 ];
 
+const getCustomerDisplayName = (customer) => {
+  const businessName = (customer?.name || '').trim();
+  const contactName = (customer?.contact || '').trim();
+  const email = (customer?.email || '').trim();
+
+  return businessName || contactName || email || `Customer #${customer?.id || ''}`;
+};
+
 // customer combobox component - select existing or add new (requires name + contact or email)
 const CustomerCombobox = memo(({ value, newName, newContact, newEmail, newAddress, newLandmark, onChange, onInputChange, onContactChange, onEmailChange, onAddressChange, onLandmarkChange, customerOptions, selectedEmail, error, emailError }) => {
   return (
@@ -450,7 +458,11 @@ const PointOfSale = () => {
   const customerOptions = useMemo(() => {
     const opts = (customersRaw || [])
       .filter(c => c.status === 'Active')
-      .map(c => ({ value: String(c.id), label: c.name, email: c.email || '' }));
+      .map(c => ({
+        value: String(c.id),
+        label: getCustomerDisplayName(c),
+        email: c.email || '',
+      }));
     return [{ value: '', label: 'Select a customer...', email: '' }, ...opts];
   }, [customersRaw]);
 
@@ -499,7 +511,8 @@ const PointOfSale = () => {
     setCustomerError('');
     if (val) {
       // Check if typed name matches existing customer
-      const match = (customersRaw || []).find(c => c.name.toLowerCase() === val.toLowerCase());
+      const normalizedInput = val.trim().toLowerCase();
+      const match = (customersRaw || []).find(c => getCustomerDisplayName(c).toLowerCase() === normalizedInput);
       if (match) {
         setSelectedCustomerId(String(match.id));
         setNewCustomerName('');

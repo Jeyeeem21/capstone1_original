@@ -27,6 +27,26 @@ class Customer extends Model
         'orders' => 'integer',
     ];
 
+    public function getDisplayNameAttribute(): string
+    {
+        $businessName = trim((string) ($this->attributes['name'] ?? ''));
+        if ($businessName !== '') {
+            return $businessName;
+        }
+
+        $contactName = trim((string) ($this->attributes['contact'] ?? ''));
+        if ($contactName !== '') {
+            return $contactName;
+        }
+
+        $email = trim((string) ($this->attributes['email'] ?? ''));
+        if ($email !== '') {
+            return $email;
+        }
+
+        return 'Customer #' . ($this->id ?? '');
+    }
+
     /**
      * Get all sales/orders for this customer.
      */
